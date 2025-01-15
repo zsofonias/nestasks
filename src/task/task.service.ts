@@ -1,71 +1,72 @@
-import { randomUUID } from 'crypto';
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
-import { ITask } from './interfaces/task.interface';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
-import { isValidStatusUpdate } from './helpers/task-servcie.helper';
-import { InvalidTaskStatusException } from './exceptions/invalid-task-status.exception';
+import { Task } from './entities/task.entity';
 
 @Injectable()
 export class TaskService {
-  private tasks: ITask[] = [];
+  constructor(
+    @InjectRepository(Task)
+    private readonly taskRepository: Repository<Task>,
+  ) {}
 
-  create(createTaskDto: CreateTaskDto): ITask {
-    const task = {
-      id: randomUUID(),
-      ...createTaskDto,
-    };
-    this.tasks.push(task);
-    return task;
+  async create(createTaskDto: CreateTaskDto): Promise<Task> {
+    const task = this.taskRepository.create(createTaskDto);
+
+    return await this.taskRepository.save(task);
   }
 
-  findAll(): ITask[] {
-    return this.tasks;
+  findAll(): Promise<Task[]> {
+    return this.taskRepository.find();
   }
 
-  findOne({ key, value }: { key: any; value: any }): ITask | undefined {
-    return this.tasks.find((task) => task[key] === value);
+  findOne(filter: FindOptionsWhere<Task>): Promise<Task | undefined> {
+    return this.taskRepository.findOneBy(filter);
   }
 
-  findOneWithException({ key, value }: { key: any; value: any }): ITask {
-    const task = this.tasks.find((task) => task[key] === value);
+  async findOneWithException(filter: FindOptionsWhere<Task>): Promise<Task> {
+    const task = await this.findOne(filter);
     if (!task) {
       throw new NotFoundException();
     }
     return task;
   }
 
-  findOneById(id: string): ITask {
-    const task = this.findOne({ key: 'id', value: id });
+  async findOneById(id: string): Promise<Task> {
+    const task = await this.findOne({ id });
     if (!task) {
-      throw new NotFoundException('task not found');
+      throw new NotFoundException('Task not found');
     }
     return task;
   }
 
-  findOneByIdAndUpdate(id: string, updateTaskDto: UpdateTaskDto): ITask {
-    const taskUpdate = this.findOneById(id);
-    if (
-      updateTaskDto.status &&
-      !isValidStatusUpdate(taskUpdate.status, updateTaskDto.status)
-    ) {
-      // throw new BadRequestException(['Invalid tasks status update']);
-      throw new InvalidTaskStatusException();
-    }
+  async findOneByIdAndUpdate(
+    id: string,
+    updateTaskDto: UpdateTaskDto,
+  ): Promise<Task> {
+    const task = await this.findOneById(id);
+    // if (
+    //   updateTaskDto.status &&
+    //   !isValidStatusUpdate(task.status, updateTaskDto.status)
+    // ) {
+    //   throw new BadRequestException(['Invalid task status update']);
+    //   // throw new InvalidTaskStatusException();
+    // }
     // const updatedTask = { ...task, ...updateTaskDto };
-    Object.assign(taskUpdate, updateTaskDto);
-    this.tasks = this.tasks.map((task) => (task.id === id ? taskUpdate : task));
-    return taskUpdate;
+    Object.assign(task, updateTaskDto);
+
+    return await this.taskRepository.save(task);
   }
 
   findOneByIdAndUpdateStatus(id: string, updateTaskDto: UpdateTaskDto) {
     return this.findOneByIdAndUpdate(id, updateTaskDto);
   }
 
-  findOneByIdAndDelete(id: string) {
-    this.findOneById(id);
-    this.tasks = this.tasks.filter((task) => task.id !== id);
-    return;
+  async findOneByIdAndDelete(id: string) {
+    const task = await this.findOneById(id);
+    return await this.taskRepository.remove(task);
   }
 }
