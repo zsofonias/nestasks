@@ -5,16 +5,32 @@ import { FindOptionsWhere, Repository } from 'typeorm';
 import { CreateTaskDto } from './dtos/create-task.dto';
 import { UpdateTaskDto } from './dtos/update-task.dto';
 import { Task } from './entities/task.entity';
+import { TaskCategoryService } from 'src/task-category/task-category.service';
+import { TaskCategory } from 'src/task-category/entities/task-category.entity';
 
 @Injectable()
 export class TaskService {
   constructor(
     @InjectRepository(Task)
     private readonly taskRepository: Repository<Task>,
+    private readonly taskCategoryService: TaskCategoryService,
   ) {}
 
   async create(createTaskDto: CreateTaskDto): Promise<Task> {
-    const task = this.taskRepository.create(createTaskDto);
+    const { category: categoryId, ...taskData } = createTaskDto;
+
+    let category: TaskCategory;
+
+    if (categoryId) {
+      category = await this.taskCategoryService.findOneWithException({
+        id: categoryId,
+      });
+    }
+    // } else {
+    //   category = await this.taskCategoryService.getDefaultTaskCategoy();
+    // }
+
+    const task = this.taskRepository.create({ ...taskData, category });
 
     return await this.taskRepository.save(task);
   }

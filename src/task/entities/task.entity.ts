@@ -1,5 +1,13 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { TaskStatus } from '../enums/task-status.enum';
+import { User } from 'src/user/entities/user.entity';
+import { TaskCategory } from 'src/task-category/entities/task-category.entity';
 
 @Entity('tasks')
 export class Task {
@@ -23,4 +31,11 @@ export class Task {
     default: TaskStatus.PENDING,
   })
   status: TaskStatus;
+
+  @ManyToOne(() => TaskCategory, { nullable: true })
+  @JoinColumn()
+  category: TaskCategory;
+
+  @ManyToOne(() => User)
+  user: User;
 }

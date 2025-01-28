@@ -1,4 +1,10 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { TaskStatus } from '../enums/task-status.enum';
 
 export class CreateTaskDto {
@@ -13,4 +19,8 @@ export class CreateTaskDto {
   @IsEnum(TaskStatus)
   @IsOptional()
   status?: TaskStatus = TaskStatus.PENDING;
+
+  @IsUUID()
+  @IsOptional()
+  category?: string;
 }

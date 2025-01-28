@@ -7,6 +7,8 @@ import { CommonModule } from './common/common.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { UserModule } from './user/user.module';
+import { TaskCategoryModule } from './task-category/task-category.module';
 
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
@@ -26,6 +28,8 @@ const envFilePath = !ENV ? `.env` : `.env.${ENV}.local`;
     DatabaseModule,
     TaskModule,
     CommonModule,
+    UserModule,
+    TaskCategoryModule,
   ],
   controllers: [AppController],
   providers: [AppService],
